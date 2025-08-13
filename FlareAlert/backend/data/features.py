@@ -19,8 +19,8 @@ class FeatureEngineer:
     
     def __init__(self, db_path: str = None):
         if db_path is None:
-            # Use the database in the backend directory where ingestion creates it
-            db_url = 'sqlite:///backend/flarealert.db'
+            # Use the database in the current directory
+            db_url = 'sqlite:///flarealert.db'
         else:
             db_url = f'sqlite:///{db_path}'
         
