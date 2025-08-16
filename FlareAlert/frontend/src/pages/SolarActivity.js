@@ -3,10 +3,11 @@ import { motion } from 'framer-motion';
 import { useQuery } from 'react-query';
 import { Activity, Zap, AlertTriangle } from 'lucide-react';
 import { apiService } from '../services/api';
+import config from '../services/config';
 
 const SolarActivity = () => {
   const { data: solarActivity } = useQuery('solar-activity', apiService.getSolarActivity, {
-    refetchInterval: 60000,
+    refetchInterval: config.REFRESH_INTERVALS.SOLAR_ACTIVITY,
   });
 
   const { data: historicalData } = useQuery('historical-data', () => apiService.getHistoricalData(7));
@@ -27,9 +28,9 @@ const SolarActivity = () => {
           <div className="flex items-center space-x-3">
             <Zap className="w-8 h-8 text-solar-flare" />
             <div>
-              <p className="text-sm text-gray-400">Solar Flares (24h)</p>
+              <p className="text-sm text-gray-400">Solar Flares (7d)</p>
               <p className="text-2xl font-bold text-white">
-                {solarActivity?.data?.flares_24h || 0}
+                {solarActivity?.data?.flares_7d || 0}
               </p>
             </div>
           </div>
@@ -44,9 +45,9 @@ const SolarActivity = () => {
           <div className="flex items-center space-x-3">
             <Activity className="w-8 h-8 text-solar-cme" />
             <div>
-              <p className="text-sm text-gray-400">CMEs (24h)</p>
+              <p className="text-sm text-gray-400">CMEs (7d)</p>
               <p className="text-2xl font-bold text-white">
-                {solarActivity?.data?.cmes_24h || 0}
+                {solarActivity?.data?.cmes_7d || 0}
               </p>
             </div>
           </div>
@@ -61,9 +62,9 @@ const SolarActivity = () => {
           <div className="flex items-center space-x-3">
             <AlertTriangle className="w-8 h-8 text-solar-storm" />
             <div>
-              <p className="text-sm text-gray-400">Geomagnetic Storms</p>
+              <p className="text-sm text-gray-400">Geomagnetic Storms (7d)</p>
               <p className="text-2xl font-bold text-white">
-                {solarActivity?.data?.storms_24h || 0}
+                {solarActivity?.data?.storms_7d || 0}
               </p>
             </div>
           </div>

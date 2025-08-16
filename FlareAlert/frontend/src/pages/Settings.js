@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Settings as SettingsIcon, Bell, Database, RefreshCw } from 'lucide-react';
 import { apiService } from '../services/api';
+import config from '../services/config';
 import toast from 'react-hot-toast';
 
 const Settings = () => {
-  const [alertThreshold, setAlertThreshold] = useState(0.4);
+  const [alertThreshold, setAlertThreshold] = useState(config.ALERTS.DEFAULT_THRESHOLD);
   const [email, setEmail] = useState('');
   const [webhookUrl, setWebhookUrl] = useState('');
 

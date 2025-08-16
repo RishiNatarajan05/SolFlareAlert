@@ -71,11 +71,11 @@ class HealthResponse(BaseModel):
 
 class SolarActivityResponse(BaseModel):
     """Response model for solar activity data"""
-    flares_24h: int
-    cmes_24h: int
-    storms_24h: int
+    flares_7d: int
+    cmes_7d: int
+    storms_7d: int
     current_kp: Optional[float]
-    max_kp_24h: Optional[float]
+    max_kp_7d: Optional[float]
     
     model_config = {"protected_namespaces": ()}
 
@@ -195,34 +195,48 @@ async def get_solar_activity_data():
     """Get solar activity data for real-time updates"""
     try:
         engine = create_database()
-        cutoff_time = datetime.now() - timedelta(hours=24)
+        cutoff_time = datetime.now() - timedelta(days=7)
         
         with engine.connect() as conn:
-            flares_24h = conn.execute(
+            flares_7d = conn.execute(
                 text("SELECT COUNT(*) FROM solar_flares WHERE peak_time >= :cutoff"),
                 {"cutoff": cutoff_time}
             ).scalar() or 0
             
-            cmes_24h = conn.execute(
+            cmes_7d = conn.execute(
                 text("SELECT COUNT(*) FROM cmes WHERE time21_5 >= :cutoff"),
                 {"cutoff": cutoff_time}
             ).scalar() or 0
             
-            storms_24h = conn.execute(
+            storms_7d = conn.execute(
                 text("SELECT COUNT(*) FROM geomagnetic_storms WHERE time_tag >= :cutoff"),
                 {"cutoff": cutoff_time}
             ).scalar() or 0
         
+            # Get current Kp (most recent)
+            current_kp_result = conn.execute(
+                text("SELECT kp_index FROM geomagnetic_storms WHERE time_tag <= :now ORDER BY time_tag DESC LIMIT 1"),
+                {"now": datetime.now()}
+            ).scalar()
+            current_kp = float(current_kp_result) if current_kp_result else 2.0
+            
+            # Get max Kp in last 7 days
+            max_kp_result = conn.execute(
+                text("SELECT MAX(kp_index) FROM geomagnetic_storms WHERE time_tag >= :cutoff"),
+                {"cutoff": cutoff_time}
+            ).scalar()
+            max_kp_7d = float(max_kp_result) if max_kp_result else 2.0
+        
         return {
-            "flares_24h": flares_24h,
-            "cmes_24h": cmes_24h,
-            "storms_24h": storms_24h,
-            "current_kp": 2.5,  # Placeholder
-            "max_kp_24h": 4.0   # Placeholder
+            "flares_7d": flares_7d,
+            "cmes_7d": cmes_7d,
+            "storms_7d": storms_7d,
+            "current_kp": current_kp,
+            "max_kp_7d": max_kp_7d
         }
     except Exception as e:
         logger.error(f"Error getting solar activity data: {e}")
-        return {"flares_24h": 0, "cmes_24h": 0, "storms_24h": 0, "current_kp": 2.5, "max_kp_24h": 4.0}
+        return {"flares_7d": 0, "cmes_7d": 0, "storms_7d": 0, "current_kp": 2.0, "max_kp_7d": 2.0}
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

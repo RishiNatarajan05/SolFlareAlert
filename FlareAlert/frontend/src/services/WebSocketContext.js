@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
+import config from './config';
 
 const WebSocketContext = createContext();
 
@@ -19,7 +20,8 @@ export const WebSocketProvider = ({ children }) => {
 
   useEffect(() => {
     const connectWebSocket = () => {
-      const ws = new WebSocket('ws://localhost:8000/ws');
+      const wsUrl = config.WS_BASE_URL + '/ws';
+      const ws = new WebSocket(wsUrl);
       
       ws.onopen = () => {
         console.log('WebSocket connected');
@@ -59,8 +61,8 @@ export const WebSocketProvider = ({ children }) => {
         setIsConnected(false);
         toast.error('Real-time connection lost');
         
-        // Attempt to reconnect after 5 seconds
-        setTimeout(connectWebSocket, 5000);
+        // Attempt to reconnect after configurable delay
+        setTimeout(connectWebSocket, config.WEBSOCKET.RECONNECT_DELAY);
       };
       
       ws.onerror = (error) => {
@@ -97,13 +99,18 @@ export const WebSocketProvider = ({ children }) => {
       'HIGH': 'red'
     };
     
+    // Use configurable duration based on risk level
+    const duration = alertData.risk_level === 'HIGH' 
+      ? config.ALERTS.HIGH_RISK_DURATION 
+      : config.ALERTS.TOAST_DURATION;
+    
     toast(alertData.message, {
       icon: '⚠️',
       style: {
         background: riskColors[alertData.risk_level] === 'red' ? '#dc2626' : '#1f2937',
         color: '#fff',
       },
-      duration: 8000,
+      duration: duration,
     });
   };
 

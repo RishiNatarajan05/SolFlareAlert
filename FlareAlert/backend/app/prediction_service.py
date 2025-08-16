@@ -283,12 +283,25 @@ class PredictionService:
                 
                 features['max_cme_speed'] = max_cme_speed
                 
-                # Get current Kp index (placeholder - would need real-time data)
-                features['current_kp'] = 2.5  # Placeholder
-                features['max_kp_24h'] = 4.0  # Placeholder
+                # Get current Kp index (real data)
+                current_kp_result = conn.execute(
+                    text("SELECT kp_index FROM geomagnetic_storms WHERE time_tag <= :now ORDER BY time_tag DESC LIMIT 1"),
+                    {"now": timestamp}
+                ).scalar()
+                features['current_kp'] = float(current_kp_result) if current_kp_result else 2.0
+                
+                # Get max Kp in last 24h
+                max_kp_result = conn.execute(
+                    text("SELECT MAX(kp_index) FROM geomagnetic_storms WHERE time_tag >= :cutoff"),
+                    {"cutoff": timestamp - timedelta(hours=24)}
+                ).scalar()
+                features['max_kp_24h'] = float(max_kp_result) if max_kp_result else 2.0
                 
         except Exception as e:
             logger.error(f"Error getting rolling statistics: {e}")
+            # Fallback to reasonable defaults
+            features['current_kp'] = 2.0
+            features['max_kp_24h'] = 2.0
         
         return features
     

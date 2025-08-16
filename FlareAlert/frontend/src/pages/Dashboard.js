@@ -11,6 +11,7 @@ import {
 import { apiService } from '../services/api';
 import { useWebSocket } from '../services/WebSocketContext';
 import RiskGauge from '../components/RiskGauge';
+import config from '../services/config';
 import toast from 'react-hot-toast';
 
 const Dashboard = () => {
@@ -23,7 +24,7 @@ const Dashboard = () => {
     'current-prediction',
     () => apiService.getPrediction(),
     {
-      refetchInterval: 300000, // 5 minutes
+      refetchInterval: config.REFRESH_INTERVALS.PREDICTION,
       onSuccess: (data) => {
         setCurrentPrediction(data.data);
         setLastUpdated(new Date());
@@ -36,7 +37,7 @@ const Dashboard = () => {
     'solar-activity',
     apiService.getSolarActivity,
     {
-      refetchInterval: 60000, // 1 minute
+      refetchInterval: config.REFRESH_INTERVALS.SOLAR_ACTIVITY,
     }
   );
 
@@ -45,7 +46,7 @@ const Dashboard = () => {
     'model-info',
     apiService.getModelInfo,
     {
-      refetchInterval: 300000, // 5 minutes
+      refetchInterval: config.REFRESH_INTERVALS.MODEL_INFO,
     }
   );
 
@@ -175,7 +176,7 @@ const Dashboard = () => {
             <div className="text-center">
               <p className="text-sm text-gray-400">Features Used</p>
               <p className="text-lg font-semibold text-white">
-                {currentPrediction.features_used || 51}
+                {currentPrediction.features_used || config.DEFAULTS.FEATURES_COUNT}
               </p>
             </div>
           </div>
@@ -185,25 +186,25 @@ const Dashboard = () => {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
-          title="Solar Flares (24h)"
-          value={solarActivity?.data?.flares_24h || 0}
+          title="Solar Flares (7d)"
+          value={solarActivity?.data?.flares_7d || 0}
           icon={Zap}
           color="text-solar-flare"
-          subtitle="Recent activity"
+          subtitle="Last 7 days"
         />
         <StatCard
-          title="CMEs (24h)"
-          value={solarActivity?.data?.cmes_24h || 0}
+          title="CMEs (7d)"
+          value={solarActivity?.data?.cmes_7d || 0}
           icon={Activity}
           color="text-solar-cme"
-          subtitle="Coronal mass ejections"
+          subtitle="Last 7 days"
         />
         <StatCard
           title="Geomagnetic Storms"
-          value={solarActivity?.data?.storms_24h || 0}
+          value={solarActivity?.data?.storms_7d || 0}
           icon={AlertTriangle}
           color="text-solar-storm"
-          subtitle="Magnetic disturbances"
+          subtitle="Last 7 days"
         />
         <StatCard
           title="Current Kp Index"

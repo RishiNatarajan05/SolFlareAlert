@@ -277,8 +277,8 @@ class HazardEnsembleModel:
         # Evaluate hazard-only baseline
         auc_hazard_only = roc_auc_score(y_val, y_pred_hazard)
 
-        # Try a few hazard weights; favor hazard for better precision
-        weight_grid = [0.7, 0.8, 0.9, 0.95]
+        # Try a few hazard weights; balanced approach
+        weight_grid = [0.6, 0.7, 0.8]
         best_w = 1.0
         best_pred = y_pred_hazard
         best_auc = auc_hazard_only
@@ -347,8 +347,8 @@ class HazardEnsembleModel:
                 'fpr': fpr
             })
         
-        # Find threshold that gives ~55% precision with good recall (target 55%)
-        target_precision = 0.55
+        # Find threshold that gives ~50% precision with good recall (target 50%)
+        target_precision = 0.50
         candidates = [r for r in results if r['precision'] >= target_precision * 0.95]
         
         if candidates:
