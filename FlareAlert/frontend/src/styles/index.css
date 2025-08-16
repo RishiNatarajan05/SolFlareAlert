@@ -5,24 +5,45 @@
 @layer base {
   html {
     font-family: 'Inter', system-ui, sans-serif;
+    /* Optimize for performance */
+    text-rendering: optimizeSpeed;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
   
   body {
     @apply bg-gray-900 text-white;
+    /* Reduce motion for users who prefer it */
+    scroll-behavior: auto;
+  }
+
+  /* Optimize animations for reduced motion preference */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 }
 
 @layer components {
   .card {
     @apply bg-gray-800 rounded-lg border border-gray-700 p-6 shadow-lg;
+    /* Optimize for GPU acceleration */
+    transform: translateZ(0);
+    will-change: transform;
   }
   
   .btn-primary {
-    @apply bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+    @apply bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-150;
   }
   
   .btn-secondary {
-    @apply bg-gray-700 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+    @apply bg-gray-700 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-150;
   }
   
   .risk-minimal {
@@ -38,11 +59,23 @@
   }
   
   .risk-high {
-    @apply text-solar-danger animate-pulse;
+    @apply text-solar-danger;
+    /* Only animate if user doesn't prefer reduced motion */
+    animation: none;
+  }
+  
+  /* Add reduced motion support for risk-high */
+  @media (prefers-reduced-motion: no-preference) {
+    .risk-high {
+      animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
   }
   
   .gauge {
     @apply relative w-32 h-32;
+    /* Optimize for GPU acceleration */
+    transform: translateZ(0);
+    will-change: transform;
   }
   
   .gauge-svg {
@@ -54,7 +87,7 @@
   }
 }
 
-/* Custom scrollbar */
+/* Custom scrollbar - optimized */
 ::-webkit-scrollbar {
   width: 8px;
 }
@@ -65,13 +98,15 @@
 
 ::-webkit-scrollbar-thumb {
   @apply bg-gray-600 rounded-full;
+  /* Optimize for GPU acceleration */
+  transform: translateZ(0);
 }
 
 ::-webkit-scrollbar-thumb:hover {
   @apply bg-gray-500;
 }
 
-/* Loading animation */
+/* Loading animation - optimized */
 .loading-spinner {
   border: 2px solid #374151;
   border-top: 2px solid #3b82f6;
@@ -79,6 +114,9 @@
   width: 20px;
   height: 20px;
   animation: spin 1s linear infinite;
+  /* Optimize for GPU acceleration */
+  transform: translateZ(0);
+  will-change: transform;
 }
 
 @keyframes spin {
@@ -86,12 +124,39 @@
   100% { transform: rotate(360deg); }
 }
 
-/* Pulse animation for alerts */
+/* Pulse animation for alerts - optimized */
 .alert-pulse {
   animation: alertPulse 2s ease-in-out infinite;
+  /* Optimize for GPU acceleration */
+  transform: translateZ(0);
+  will-change: opacity;
 }
 
 @keyframes alertPulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.7; }
+}
+
+/* Performance optimizations */
+.performance-optimized {
+  /* Force GPU acceleration for smooth animations */
+  transform: translateZ(0);
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* Reduce motion for all animations when user prefers it */
+@media (prefers-reduced-motion: reduce) {
+  .loading-spinner {
+    animation: none;
+  }
+  
+  .alert-pulse {
+    animation: none;
+  }
+  
+  .risk-high {
+    animation: none;
+  }
 }

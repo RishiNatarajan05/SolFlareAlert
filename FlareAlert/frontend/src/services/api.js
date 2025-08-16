@@ -48,6 +48,9 @@ export const apiService = {
   // Historical data
   getHistoricalData: (days = 7) => api.get(`/historical-data?days=${days}`),
   
+  // Prediction history
+  getPredictionHistory: (days = 7) => api.get(`/prediction-history?days=${days}`),
+  
   // Data ingestion
   triggerDataIngestion: () => api.post('/ingest-data'),
   

@@ -64,6 +64,9 @@ models/*.pkl
 models/*.joblib
 models/*.h5
 
+# Specific model files
+backend/models/hazard_ensemble_20250813_155550.pkl
+
 # Data files
 data/raw/
 data/processed/

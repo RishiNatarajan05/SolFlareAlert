@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
 import toast from 'react-hot-toast';
 import config from './config';
 
@@ -12,11 +12,33 @@ export const useWebSocket = () => {
   return context;
 };
 
+// Throttle function to limit update frequency
+const throttle = (func, limit) => {
+  let inThrottle;
+  return function() {
+    const args = arguments;
+    const context = this;
+    if (!inThrottle) {
+      func.apply(context, args);
+      inThrottle = true;
+      setTimeout(() => inThrottle = false, limit);
+    }
+  }
+};
+
 export const WebSocketProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
   const [latestData, setLatestData] = useState(null);
   const [alerts, setAlerts] = useState([]);
+
+  // Throttled data update function
+  const throttledSetLatestData = useCallback(
+    throttle((data) => {
+      setLatestData(data);
+    }, config.WEBSOCKET.THROTTLE_INTERVAL),
+    []
+  );
 
   useEffect(() => {
     const connectWebSocket = () => {
@@ -32,15 +54,18 @@ export const WebSocketProvider = ({ children }) => {
       ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
-          setLatestData(data);
+          
+          // Use throttled update for status updates to prevent excessive re-renders
+          if (data.type === 'status_update') {
+            throttledSetLatestData(data);
+          } else {
+            setLatestData(data);
+          }
           
           // Handle different message types
           switch (data.type) {
             case 'solar_flare_alert':
               handleAlert(data);
-              break;
-            case 'status_update':
-              // Update real-time status
               break;
             case 'data_ingestion_complete':
               toast.success('Data ingestion completed');
@@ -80,9 +105,9 @@ export const WebSocketProvider = ({ children }) => {
         socket.close();
       }
     };
-  }, []);
+  }, [throttledSetLatestData]);
 
-  const handleAlert = (alertData) => {
+  const handleAlert = useCallback((alertData) => {
     const newAlert = {
       id: Date.now(),
       ...alertData,
@@ -112,25 +137,26 @@ export const WebSocketProvider = ({ children }) => {
       },
       duration: duration,
     });
-  };
+  }, []);
 
-  const sendMessage = (message) => {
+  const sendMessage = useCallback((message) => {
     if (socket && isConnected) {
       socket.send(JSON.stringify(message));
     }
-  };
+  }, [socket, isConnected]);
 
-  const clearAlerts = () => {
+  const clearAlerts = useCallback(() => {
     setAlerts([]);
-  };
+  }, []);
 
-  const value = {
+  // Memoize the context value to prevent unnecessary re-renders
+  const value = useMemo(() => ({
     isConnected,
     latestData,
     alerts,
     sendMessage,
     clearAlerts,
-  };
+  }), [isConnected, latestData, alerts, sendMessage, clearAlerts]);
 
   return (
     <WebSocketContext.Provider value={value}>

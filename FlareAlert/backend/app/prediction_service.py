@@ -1,12 +1,5 @@
-#!/usr/bin/env python3
-"""
-Prediction Service for FlareAlert
-Handles feature extraction and ML model predictions
-"""
-
 import sys
 import os
-# Fix the path to properly include the scripts directory
 current_dir = os.path.dirname(os.path.abspath(__file__))
 backend_dir = os.path.dirname(current_dir)
 project_root = os.path.dirname(backend_dir)
@@ -28,21 +21,13 @@ from database.models import create_database, SolarFlare, CME, GeomagneticStorm
 
 logger = logging.getLogger(__name__)
 
-# Global variable to track if HazardEnsembleModel is available
 HAZARD_MODEL_AVAILABLE = False
 
 class PlaceholderModel:
-    """Placeholder model that returns reasonable predictions when real model can't be loaded"""
-    
     def predict_proba(self, X):
-        """Return probability predictions"""
-        # Return a reasonable prediction based on current solar activity
-        # This is a simplified version of your hazard ensemble logic
         n_samples = X.shape[0] if hasattr(X, 'shape') else 1
         
-        # Simple logic: higher activity = higher probability
         if n_samples == 1:
-            # Extract some key features if available
             if hasattr(X, 'iloc'):
                 flare_count_24h = X.iloc[0].get('flare_count_24h', 0) if hasattr(X.iloc[0], 'get') else 0
                 m_plus_count_24h = X.iloc[0].get('m_plus_count_24h', 0) if hasattr(X.iloc[0], 'get') else 0
@@ -50,26 +35,21 @@ class PlaceholderModel:
                 flare_count_24h = 0
                 m_plus_count_24h = 0
             
-            # Simple probability calculation
-            base_prob = 0.05  # 5% base probability
-            flare_bonus = min(flare_count_24h * 0.02, 0.15)  # Up to 15% bonus
-            m_plus_bonus = min(m_plus_count_24h * 0.1, 0.3)  # Up to 30% bonus
+            base_prob = 0.05
+            flare_bonus = min(flare_count_24h * 0.02, 0.15)
+            m_plus_bonus = min(m_plus_count_24h * 0.1, 0.3)
             
-            prob = min(base_prob + flare_bonus + m_plus_bonus, 0.8)  # Cap at 80%
+            prob = min(base_prob + flare_bonus + m_plus_bonus, 0.8)
             
-            return np.array([[1 - prob, prob]])  # [no_flare, flare]
+            return np.array([[1 - prob, prob]])
         else:
-            # For multiple samples, return reasonable probabilities
             return np.array([[0.85, 0.15]] * n_samples)
     
     def predict(self, X):
-        """Return binary predictions"""
         proba = self.predict_proba(X)
         return (proba[:, 1] > 0.5).astype(int)
 
 class PredictionService:
-    """Service for making solar flare predictions using the hazard ensemble model"""
-    
     def __init__(self):
         self.model = None
         self.model_path = None
@@ -78,11 +58,9 @@ class PredictionService:
         self.load_model()
     
     def load_model(self) -> bool:
-        """Load the trained hazard ensemble model"""
         global HAZARD_MODEL_AVAILABLE
         
         try:
-            # Try to import HazardEnsembleModel here when needed
             try:
                 from hazard_ensemble_model import HazardEnsembleModel
                 HAZARD_MODEL_AVAILABLE = True
@@ -92,14 +70,18 @@ class PredictionService:
                 HAZARD_MODEL_AVAILABLE = False
             
             import glob
-            model_files = glob.glob('../models/hazard_ensemble_*.pkl')
+            model_files = glob.glob('models/hazard_ensemble_*.pkl')
             
             if not model_files:
                 logger.warning("No trained model found")
                 return False
             
-            # Load the latest model
-            latest_model = max(model_files, key=os.path.getctime)
+            # Load the ensemble model (prefer the larger, more recent one)
+            if len(model_files) > 1:
+                # Sort by file size (larger = more complete ensemble model)
+                latest_model = max(model_files, key=os.path.getsize)
+            else:
+                latest_model = model_files[0]
             logger.info(f"Loading model from: {latest_model}")
             
             # Try to load with custom unpickler to handle missing classes

@@ -1,0 +1,14 @@
+FROM public.ecr.aws/lambda/python:3.9
+
+WORKDIR ${LAMBDA_TASK_ROOT}
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY app/ .
+COPY lambda_handler.py .
+COPY config.py .
+COPY models/ ./models/
+COPY hazard_ensemble_model.py .
+
+CMD ["lambda_handler.handler"]

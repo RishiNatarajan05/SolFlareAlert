@@ -1,16 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useQuery } from 'react-query';
 import { 
-  TrendingUp, 
   Activity, 
+  Zap, 
   AlertTriangle, 
-  RefreshCw,
-  Zap
+  TrendingUp, 
+  RefreshCw
 } from 'lucide-react';
 import { apiService } from '../services/api';
 import { useWebSocket } from '../services/WebSocketContext';
+import { useCurrentPrediction } from '../hooks/usePrediction';
 import RiskGauge from '../components/RiskGauge';
+import StatCard from '../components/StatCard';
 import config from '../services/config';
 import toast from 'react-hot-toast';
 
@@ -19,38 +21,48 @@ const Dashboard = () => {
   const [currentPrediction, setCurrentPrediction] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(new Date());
 
-  // Fetch current prediction
-  const { refetch: refetchPrediction } = useQuery(
-    'current-prediction',
-    () => apiService.getPrediction(),
-    {
-      refetchInterval: config.REFRESH_INTERVALS.PREDICTION,
-      onSuccess: (data) => {
-        setCurrentPrediction(data.data);
-        setLastUpdated(new Date());
-      },
-    }
+  const prefersReducedMotion = useMemo(() => 
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches, 
+    []
   );
 
-  // Fetch solar activity
+  const { refetch: refetchPrediction, data: predictionData } = useCurrentPrediction();
+
   const { data: solarActivity, refetch: refetchSolarActivity } = useQuery(
     'solar-activity',
     apiService.getSolarActivity,
     {
       refetchInterval: config.REFRESH_INTERVALS.SOLAR_ACTIVITY,
+      staleTime: 240000,
+      cacheTime: 600000,
+      refetchOnWindowFocus: false,
+      refetchOnMount: false,
+      refetchOnReconnect: false,
+      retry: 1,
     }
   );
 
-  // Fetch model info
   const { data: modelInfo } = useQuery(
     'model-info',
     apiService.getModelInfo,
     {
       refetchInterval: config.REFRESH_INTERVALS.MODEL_INFO,
+      staleTime: 600000,
+      cacheTime: 900000,
+      refetchOnWindowFocus: false,
+      refetchOnMount: false,
+      refetchOnReconnect: false,
+      retry: 1,
     }
   );
 
-  // Update from WebSocket data
+  useEffect(() => {
+    if (predictionData && !currentPrediction) {
+      setCurrentPrediction(predictionData.data);
+      setLastUpdated(new Date());
+    }
+  }, [predictionData, currentPrediction]);
+
   useEffect(() => {
     if (latestData && latestData.type === 'status_update') {
       setCurrentPrediction({
@@ -63,16 +75,16 @@ const Dashboard = () => {
     }
   }, [latestData]);
 
-  const handleRefresh = async () => {
+  const handleRefresh = useCallback(async () => {
     try {
       await Promise.all([refetchPrediction(), refetchSolarActivity()]);
       toast.success('Data refreshed successfully');
     } catch (error) {
       toast.error('Failed to refresh data');
     }
-  };
+  }, [refetchPrediction, refetchSolarActivity]);
 
-  const getRiskColor = (level) => {
+  const getRiskColor = useCallback((level) => {
     switch (level) {
       case 'MINIMAL':
         return 'text-solar-safe';
@@ -85,25 +97,20 @@ const Dashboard = () => {
       default:
         return 'text-gray-400';
     }
-  };
+  }, []);
 
-  const StatCard = ({ title, value, icon: Icon, color = 'text-blue-400', subtitle }) => (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="card"
-    >
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm text-gray-400">{title}</p>
-          <p className="text-2xl font-bold text-white">{value}</p>
-          {subtitle && <p className="text-xs text-gray-500 mt-1">{subtitle}</p>}
-        </div>
-        <div className={`p-3 rounded-lg bg-gray-700 ${color}`}>
-          <Icon className="w-6 h-6" />
-        </div>
-      </div>
-    </motion.div>
+  // Memoize solar activity data to prevent unnecessary re-renders
+  const solarActivityData = useMemo(() => ({
+    flares_30d: solarActivity?.data?.flares_30d || 0,
+    cmes_30d: solarActivity?.data?.cmes_30d || 0,
+    storms_30d: solarActivity?.data?.storms_30d || 0,
+    current_kp: solarActivity?.data?.current_kp || 'N/A',
+  }), [solarActivity]);
+
+  // Memoize recent alerts to prevent unnecessary re-renders
+  const recentAlerts = useMemo(() => 
+    alerts.slice(0, 5), 
+    [alerts]
   );
 
   return (
@@ -127,8 +134,9 @@ const Dashboard = () => {
 
       {/* Current Risk Level */}
       <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
+        initial={prefersReducedMotion ? { opacity: 1 } : { opacity: 0, scale: 0.95 }}
+        animate={prefersReducedMotion ? { opacity: 1 } : { opacity: 1, scale: 1 }}
+        transition={{ duration: prefersReducedMotion ? 0 : 0.3 }}
         className="card"
       >
         <div className="flex items-center justify-between mb-6">
@@ -186,45 +194,50 @@ const Dashboard = () => {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
-          title="Solar Flares (7d)"
-          value={solarActivity?.data?.flares_7d || 0}
+          title="Solar Flares (30d)"
+          value={solarActivityData.flares_30d}
           icon={Zap}
           color="text-solar-flare"
-          subtitle="Last 7 days"
+          subtitle="Last 30 days"
+          delay={prefersReducedMotion ? 0 : 0}
         />
         <StatCard
-          title="CMEs (7d)"
-          value={solarActivity?.data?.cmes_7d || 0}
+          title="CMEs (30d)"
+          value={solarActivityData.cmes_30d}
           icon={Activity}
           color="text-solar-cme"
-          subtitle="Last 7 days"
+          subtitle="Last 30 days"
+          delay={prefersReducedMotion ? 0 : 1}
         />
         <StatCard
           title="Geomagnetic Storms"
-          value={solarActivity?.data?.storms_7d || 0}
+          value={solarActivityData.storms_30d}
           icon={AlertTriangle}
           color="text-solar-storm"
-          subtitle="Last 7 days"
+          subtitle="Last 30 days"
+          delay={prefersReducedMotion ? 0 : 2}
         />
         <StatCard
           title="Current Kp Index"
-          value={solarActivity?.data?.current_kp || 'N/A'}
+          value={solarActivityData.current_kp}
           icon={TrendingUp}
           color="text-blue-400"
           subtitle="Geomagnetic activity"
+          delay={prefersReducedMotion ? 0 : 3}
         />
       </div>
 
       {/* Recent Alerts */}
-      {alerts.length > 0 && (
+      {recentAlerts.length > 0 && (
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={prefersReducedMotion ? { opacity: 1 } : { opacity: 0, y: 10 }}
+          animate={prefersReducedMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+          transition={{ duration: prefersReducedMotion ? 0 : 0.3 }}
           className="card"
         >
           <h2 className="text-xl font-semibold text-white mb-4">Recent Alerts</h2>
           <div className="space-y-3">
-            {alerts.slice(0, 5).map((alert) => (
+            {recentAlerts.map((alert) => (
               <div
                 key={alert.id}
                 className="flex items-center justify-between p-3 bg-gray-700 rounded-lg"
@@ -250,8 +263,9 @@ const Dashboard = () => {
       {/* Model Status */}
       {modelInfo && (
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={prefersReducedMotion ? { opacity: 1 } : { opacity: 0, y: 10 }}
+          animate={prefersReducedMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+          transition={{ duration: prefersReducedMotion ? 0 : 0.3 }}
           className="card"
         >
           <h2 className="text-xl font-semibold text-white mb-4">Model Status</h2>

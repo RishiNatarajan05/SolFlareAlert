@@ -16,7 +16,6 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('logs/ingestion.log'),
         logging.StreamHandler()
     ]
 )
@@ -115,7 +114,7 @@ class DataIngestion:
             logger.debug(f"Skipping storm with invalid data: {e}")
             return None
     
-    def ingest_data(self, hours_back: int = 72):
+    def ingest_data(self, hours_back: int = 8760):
         """Main ingestion function"""
         logger.info(f"Starting data ingestion for last {hours_back} hours...")
         

@@ -10,6 +10,16 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       refetchOnWindowFocus: false,
+      refetchOnMount: false, // Don't refetch when component mounts if data exists
+      refetchOnReconnect: false, // Don't refetch on network reconnect
+      retry: 1,
+      staleTime: 300000, // 5 minutes - data is fresh for 5 minutes
+      cacheTime: 600000, // 10 minutes - keep in cache for 10 minutes
+      // Optimize for better performance
+      refetchInterval: false, // Disable automatic refetching by default
+      refetchIntervalInBackground: false, // Don't refetch when tab is in background
+    },
+    mutations: {
       retry: 1,
     },
   },
