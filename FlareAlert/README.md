@@ -18,8 +18,7 @@ A solar flare prediction system using machine learning to forecast solar flares 
 
 ## Model Performance
 
-- **Precision**: 34.2%
-- **Recall**: 17.6% (smoothed)
+- **Precision**: 50.2%
 - **False Positive Rate**: 4.8%
 - **Ensemble AUC**: 0.781
 
