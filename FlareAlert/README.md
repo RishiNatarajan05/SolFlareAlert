@@ -6,7 +6,6 @@ Web Application leveraging an Ensemble ML Model for rea-time solar flare predict
 - **Hazard Ensemble Model** - XGBoost + Logistic Regression ensemble
 - **Real-time Predictions** - 6-hour solar flare probability forecasts
 - **51 Feature Engineering** - Comprehensive solar activity features
-- **Model Performance** - AUC: 0.772, Precision: 0.502, Recall: 0.176
 
 ### 📊 **Real-time Monitoring**
 - **Live Dashboard** - Animated risk gauges and real-time statistics
