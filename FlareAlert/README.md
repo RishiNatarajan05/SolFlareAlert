@@ -14,7 +14,6 @@ Web Application leveraging an Ensemble ML Model for rea-time solar flare predict
 - **Historical Analysis** - 7-day data visualization
 
 ### 🚀 **Modern Web Interface**
-- **React Dashboard** - Beautiful, responsive UI with dark theme
 - **Interactive Charts** - Real-time data visualization
 - **Mobile Responsive** - Works on all devices
 - **Smooth Animations** - Framer Motion powered transitions
