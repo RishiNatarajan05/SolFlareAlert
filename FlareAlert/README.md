@@ -1,8 +1,6 @@
 # FlareAlert - Solar Flare Prediction System
 
-A comprehensive real-time solar flare prediction and monitoring system with machine learning capabilities, modern web interface, and automated data ingestion.
-
-## 🌟 Features
+Web Application leveraging an Ensemble ML Model for rea-time solar flare prediction with automated data ingestion.
 
 ### 🔮 **Advanced ML Predictions**
 - **Hazard Ensemble Model** - XGBoost + Logistic Regression ensemble
@@ -31,7 +29,7 @@ A comprehensive real-time solar flare prediction and monitoring system with mach
 <<<<<<< Updated upstream
 - **Precision**: 50.2%
 - **False Positive Rate**: 4.8%
-- **Ensemble AUC**: 0.781
+- **Ensemble AUC**: 0.772
 =======
 ### 🔄 **Automated Operations**
 - **Data Ingestion** - NASA DONKI API integration
